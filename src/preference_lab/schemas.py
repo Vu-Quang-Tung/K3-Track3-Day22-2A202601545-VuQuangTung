@@ -1,6 +1,10 @@
 from __future__ import annotations
+
+import re
 from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
+
 
 class PreferenceExample(BaseModel):
     """One preference pair for DPO/ORPO-style alignment."""
@@ -18,7 +22,12 @@ class PreferenceExample(BaseModel):
     @classmethod
     def chosen_and_rejected_must_differ(cls, rejected: str, info: Any) -> str:
         chosen = info.data.get("chosen")
-        # TODO(student): make this validation robust to whitespace/case and near duplicates.
-        if chosen == rejected:
+        if chosen is None:
+            return rejected
+        
+        def normalize(text: str) -> str:
+            return re.sub(r'\s+', ' ', text.strip().lower())
+            
+        if normalize(chosen) == normalize(rejected):
             raise ValueError("chosen and rejected must differ")
         return rejected
